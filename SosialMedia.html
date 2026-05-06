@@ -143,24 +143,133 @@
   <footer class="footer">&copy; 2024 Akino Store. All rights reserved.</footer>
 
   <script>
-    window.addEventListener('scroll',()=>document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>40));
-    document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('navLinks').classList.toggle('active'));
-    const slides=document.getElementById('slides'),totalSlides=slides.children.length;let slideIndex=0;
-    const dotsContainer=document.getElementById('sliderDots');
-    for(let i=0;i<totalSlides;i++){const d=document.createElement('span');d.addEventListener('click',()=>goSlide(i));dotsContainer.appendChild(d)}
-    function goSlide(i){slideIndex=i;slides.style.transform=`translateX(-${i*100}%)`;document.querySelectorAll('.slider-dots span').forEach((d,idx)=>d.classList.toggle('active',idx===i))}
-    goSlide(0);setInterval(()=>goSlide((slideIndex+1)%totalSlides),4000);
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+    });
+    document.getElementById('menuToggle').addEventListener('click', () => {
+      document.getElementById('navLinks').classList.toggle('active');
+    });
 
-    import{initializeApp}from"https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-    import{getFirestore,collection,addDoc,query,orderBy,limit,serverTimestamp,onSnapshot,startAfter,getDocs}from"https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    const firebaseConfig={apiKey:"AIzaSyD4sgRYUhk08Y4oZPR4GXJbSuX1fHjXBtg",authDomain:"akinowedding-73271.firebaseapp.com",projectId:"akinowedding-73271",storageBucket:"akinowedding-73271.appspot.com",messagingSenderId:"307666594440",appId:"1:307666594440:web:e7d3496744464f4c6d0d3d"};
-    const app=initializeApp(firebaseConfig);const db=getFirestore(app);
-    const form=document.getElementById('messageForm');const messagesDiv=document.getElementById('messages');let lastVisible=null,loading=false;
-    form.addEventListener('submit',async e=>{e.preventDefault();const n=document.getElementById('name').value.trim(),m=document.getElementById('message').value.trim();if(n&&m){await addDoc(collection(db,"messages"),{name:n,message:m,timestamp:serverTimestamp()});form.reset()}});
-    function loadInitial(){const q=query(collection(db,"messages"),orderBy("timestamp","desc"),limit(10));onSnapshot(q,snap=>{messagesDiv.innerHTML="";snap.forEach(doc=>renderMsg(doc.data(),false));messagesDiv.scrollTop=0;if(snap.docs.length>0)lastVisible=snap.docs[snap.docs.length-1]})}
-    messagesDiv.addEventListener("scroll",async()=>{if(loading)return;if(messagesDiv.scrollTop+messagesDiv.clientHeight>=messagesDiv.scrollHeight-10){loading=true;if(lastVisible){const nq=query(collection(db,"messages"),orderBy("timestamp","desc"),startAfter(lastVisible),limit(10));const ns=await getDocs(nq);ns.forEach(doc=>renderMsg(doc.data(),true));if(ns.docs.length>0)lastVisible=ns.docs[ns.docs.length-1]}loading=false}});
-    function renderMsg(data,append=true){const d=document.createElement("div");d.className="message";d.innerHTML=`<strong>${data.name}</strong><p>${data.message}</p><small>${data.timestamp?new Date(data.timestamp.seconds*1000).toLocaleString():""}</small>`;append?messagesDiv.appendChild(d):messagesDiv.prepend(d)}
-    loadInitial();
+    const slides = document.getElementById('slides');
+    const totalSlides = slides.children.length;
+    let slideIndex = 0;
+    const dotsContainer = document.getElementById('sliderDots');
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('span');
+      dot.addEventListener('click', () => goSlide(i));
+      dotsContainer.appendChild(dot);
+    }
+    function goSlide(i) {
+      slideIndex = i;
+      slides.style.transform = 'translateX(-' + (i * 100) + '%)';
+      document.querySelectorAll('.slider-dots span').forEach((d, idx) => {
+        d.classList.toggle('active', idx === i);
+      });
+    }
+    goSlide(0);
+    setInterval(() => goSlide((slideIndex + 1) % totalSlides), 4000);
   </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, query, orderBy, limit,
+      serverTimestamp, onSnapshot, startAfter, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD4sgRYUhk08Y4oZPR4GXJbSuX1fHjXBtg",
+      authDomain: "akinowedding-73271.firebaseapp.com",
+      projectId: "akinowedding-73271",
+      storageBucket: "akinowedding-73271.appspot.com",
+      messagingSenderId: "307666594440",
+      appId: "1:307666594440:web:e7d3496744464f4c6d0d3d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById('messageForm');
+    const messagesDiv = document.getElementById('messages');
+
+    let lastVisible = null;
+    let loading = false;
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
+
+      if (name && message) {
+        await addDoc(collection(db, "messages"), {
+          name: name,
+          message: message,
+          timestamp: serverTimestamp()
+        });
+        form.reset();
+      }
+    });
+
+    function loadInitialMessages() {
+      const q = query(
+        collection(db, "messages"),
+        orderBy("timestamp", "desc"),
+        limit(10)
+      );
+
+      onSnapshot(q, (snapshot) => {
+        messagesDiv.innerHTML = "";
+        snapshot.forEach((doc) => {
+          renderMessage(doc.data());
+        });
+        messagesDiv.scrollTop = 0;
+
+        if (snapshot.docs.length > 0) {
+          lastVisible = snapshot.docs[snapshot.docs.length - 1];
+        }
+      });
+    }
+
+    messagesDiv.addEventListener("scroll", async () => {
+      if (loading) return;
+      if (messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 10) {
+        loading = true;
+        if (lastVisible) {
+          const nextQ = query(
+            collection(db, "messages"),
+            orderBy("timestamp", "desc"),
+            startAfter(lastVisible),
+            limit(10)
+          );
+          const nextSnap = await getDocs(nextQ);
+          nextSnap.forEach((doc) => {
+            renderMessage(doc.data(), true);
+          });
+          if (nextSnap.docs.length > 0) {
+            lastVisible = nextSnap.docs[nextSnap.docs.length - 1];
+          }
+        }
+        loading = false;
+      }
+    });
+
+    function renderMessage(data, appendBottom = true) {
+      const div = document.createElement("div");
+      div.className = "message";
+      div.innerHTML =
+        "<strong>" + data.name + "</strong>" +
+        "<p>" + data.message + "</p>" +
+        "<small>" + (data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : "") + "</small>";
+
+      if (appendBottom) {
+        messagesDiv.appendChild(div);
+      } else {
+        messagesDiv.prepend(div);
+      }
+    }
+
+    loadInitialMessages();
+  </script>
+
 </body>
 </html>
